@@ -1,0 +1,6 @@
+{
+  "name": "DigitalTwin.ai",
+  "description": "Industrial Modern AI-powered manufacturing line digital twin dashboard with floor monitoring, plant manager diagnostics, executive leadership insights, and predictive anomaly intervention.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
