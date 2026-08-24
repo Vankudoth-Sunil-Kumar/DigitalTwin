@@ -176,6 +176,35 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
           )}
         </button>
 
+        {/* What-If Simulation View */}
+        <button
+          id="nav-whatif-view"
+          onClick={() => handleNavigation('whatif')}
+          className={`flex items-center gap-3 py-2.5 rounded transition-all w-full cursor-pointer group relative ${
+            isCollapsed ? 'justify-center px-1' : 'px-3'
+          } ${
+            currentView === 'whatif'
+              ? 'text-[#d8e2ff] font-bold border-l-2 border-[#d8e2ff] bg-[#2170e4]/20 shadow-sm'
+              : 'text-[#7c839b] hover:text-white hover:bg-white/5 font-medium'
+          }`}
+          title="What-If Simulation Studio"
+        >
+          <span
+            className="material-symbols-outlined text-[20px] shrink-0"
+            style={{ fontVariationSettings: currentView === 'whatif' ? "'FILL' 1" : "'FILL' 0" }}
+          >
+            science
+          </span>
+          {!isCollapsed && (
+            <div className="flex items-center justify-between flex-1 min-w-0">
+              <span className="text-[13px] truncate">What-If Simulation</span>
+              <span className="bg-[#10B981] text-[9px] font-mono font-bold text-black px-1.5 py-0.2 rounded shrink-0">
+                SANDBOX
+              </span>
+            </div>
+          )}
+        </button>
+
         {/* Leadership View */}
         <button
           id="nav-leadership-view"
@@ -187,7 +216,7 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
               ? 'text-[#d8e2ff] font-bold border-l-2 border-[#d8e2ff] bg-[#2170e4]/20 shadow-sm'
               : 'text-[#7c839b] hover:text-white hover:bg-white/5 font-medium'
           }`}
-          title="Leadership View"
+          title="Leadership & ROI View"
         >
           <span
             className="material-symbols-outlined text-[20px] shrink-0"
@@ -195,7 +224,29 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
           >
             insights
           </span>
-          {!isCollapsed && <span className="text-[13px] truncate">Leadership View</span>}
+          {!isCollapsed && <span className="text-[13px] truncate">Leadership & ROI</span>}
+        </button>
+
+        {/* System Architecture & OT Integration */}
+        <button
+          id="nav-architecture-view"
+          onClick={() => handleNavigation('architecture')}
+          className={`flex items-center gap-3 py-2.5 rounded transition-all w-full cursor-pointer group relative ${
+            isCollapsed ? 'justify-center px-1' : 'px-3'
+          } ${
+            currentView === 'architecture'
+              ? 'text-[#d8e2ff] font-bold border-l-2 border-[#d8e2ff] bg-[#2170e4]/20 shadow-sm'
+              : 'text-[#7c839b] hover:text-white hover:bg-white/5 font-medium'
+          }`}
+          title="System Architecture & OT Tap"
+        >
+          <span
+            className="material-symbols-outlined text-[20px] shrink-0"
+            style={{ fontVariationSettings: currentView === 'architecture' ? "'FILL' 1" : "'FILL' 0" }}
+          >
+            account_tree
+          </span>
+          {!isCollapsed && <span className="text-[13px] truncate">Architecture & OT</span>}
         </button>
 
         {/* Audit Logs */}

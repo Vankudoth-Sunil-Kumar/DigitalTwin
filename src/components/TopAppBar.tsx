@@ -16,6 +16,8 @@ interface TopAppBarProps {
   liveStreamSpeed?: 1 | 2;
   onChangeSpeed?: (speed: 1 | 2) => void;
   onSimulateAnomaly?: () => void;
+  onStartHeroDemo?: () => void;
+  onOpenTestRunner?: () => void;
 }
 
 export const TopAppBar: React.FC<TopAppBarProps> = ({
@@ -32,7 +34,9 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
   onToggleLiveStream,
   liveStreamSpeed = 1,
   onChangeSpeed,
-  onSimulateAnomaly
+  onSimulateAnomaly,
+  onStartHeroDemo,
+  onOpenTestRunner
 }) => {
   const [shiftDropdownOpen, setShiftDropdownOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -178,10 +182,34 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
             </button>
           )}
 
+          {onStartHeroDemo && (
+            <button
+              id="btn-run-judge-demo"
+              onClick={onStartHeroDemo}
+              className="px-2.5 py-1 text-[11px] font-mono font-bold bg-[#0058be] text-white hover:bg-[#2170e4] rounded shadow-sm flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 border border-[#0058be]"
+              title="Launch 10-step scripted Hero Demo (00:00 - 02:30)"
+            >
+              <span className="material-symbols-outlined text-[14px]">play_circle</span>
+              <span className="hidden sm:inline">RUN JUDGE DEMO</span>
+              <span className="sm:hidden">DEMO</span>
+            </button>
+          )}
+
+          {onOpenTestRunner && (
+            <button
+              id="btn-topbar-test-suite"
+              onClick={onOpenTestRunner}
+              className="p-1 text-[#45464d] hover:text-[#0058be] hover:bg-white rounded transition-colors cursor-pointer hidden md:flex"
+              title="Run Automated In-App Verification Suite"
+            >
+              <span className="material-symbols-outlined text-[18px]">verified</span>
+            </button>
+          )}
+
           {onSimulateAnomaly && (
             <button
               onClick={onSimulateAnomaly}
-              className="px-2 py-0.5 text-[10px] font-mono font-bold bg-[#BA1A1A]/10 text-[#BA1A1A] hover:bg-[#BA1A1A] hover:text-white rounded border border-[#BA1A1A]/20 transition-all cursor-pointer hidden md:flex items-center gap-1"
+              className="px-2 py-0.5 text-[10px] font-mono font-bold bg-[#BA1A1A]/10 text-[#BA1A1A] hover:bg-[#BA1A1A] hover:text-white rounded border border-[#BA1A1A]/20 transition-all cursor-pointer hidden lg:flex items-center gap-1"
               title="Trigger simulated cycle time drift burst at ST32"
             >
               <span className="material-symbols-outlined text-[12px]">bolt</span>

@@ -7,14 +7,20 @@ import {
   bottleneckRows,
   defectTraceData
 } from './data/mockData';
+import { heroDemoSteps } from './data/heroDemoScript';
 import { NavigationSidebar } from './components/NavigationSidebar';
 import { TopAppBar } from './components/TopAppBar';
+import { HeroDemoController } from './components/HeroDemoController';
 import { FloorView } from './components/FloorView';
 import { PlantManagerView } from './components/PlantManagerView';
 import { LeadershipView } from './components/LeadershipView';
 import { RecommendationDetailView } from './components/RecommendationDetailView';
 import { AuditLogsView } from './components/AuditLogsView';
 import { AnalyticsEngineView } from './components/AnalyticsEngineView';
+import { WhatIfSimulationView } from './components/WhatIfSimulationView';
+import { SystemArchitectureView } from './components/SystemArchitectureView';
+import { InAppTestRunnerModal } from './components/InAppTestRunnerModal';
+import { LowCostSensorModal } from './components/LowCostSensorModal';
 import { SystemHealthModal } from './components/SystemHealthModal';
 import { AdjustParametersModal } from './components/AdjustParametersModal';
 import { AlertsDrawer } from './components/AlertsDrawer';
@@ -34,6 +40,11 @@ export default function App() {
   const [bottlenecks, setBottlenecks] = useState(bottleneckRows);
   const [defectTraces, setDefectTraces] = useState(defectTraceData);
 
+  // Hero Demo State (Track 4 Official Storyline 00:00 - 02:30)
+  const [isHeroDemoActive, setIsHeroDemoActive] = useState<boolean>(true);
+  const [heroStepIndex, setHeroStepIndex] = useState<number>(0);
+  const [isHeroPlaying, setIsHeroPlaying] = useState<boolean>(false);
+
   // Live Telemetry Engine State
   const [isLiveStreaming, setIsLiveStreaming] = useState<boolean>(true);
   const [liveStreamSpeed, setLiveStreamSpeed] = useState<1 | 2>(1);
@@ -43,8 +54,8 @@ export default function App() {
   const [telemetryTick, setTelemetryTick] = useState<number>(0);
 
   // Active Context Selections
-  const [selectedStationId, setSelectedStationId] = useState<string>('ST32');
-  const [selectedAlertId, setSelectedAlertId] = useState<string>('alert-st32');
+  const [selectedStationId, setSelectedStationId] = useState<string>('ST18');
+  const [selectedAlertId, setSelectedAlertId] = useState<string>('alert-st18');
   const [currentShift, setCurrentShift] = useState<string>('Shift A (08:00 - 16:00)');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -54,6 +65,8 @@ export default function App() {
   const [isAlertsDrawerOpen, setIsAlertsDrawerOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+  const [isTestRunnerOpen, setIsTestRunnerOpen] = useState(false);
+  const [isLowCostSensorModalOpen, setIsLowCostSensorModalOpen] = useState(false);
 
   // Active Toast notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -65,9 +78,45 @@ export default function App() {
     }, 3500);
   };
 
+  // Sync Station 18 when Hero Demo Step changes
+  useEffect(() => {
+    const step = heroDemoSteps[heroStepIndex];
+    if (!step) return;
+
+    setSelectedStationId(step.focusStationId);
+
+    setStations((prev) =>
+      prev.map((st) => {
+        if (st.id === step.focusStationId) {
+          const isWarning = step.systemState === 'EARLY_DRIFT' || step.systemState === 'ANOMALY_TRIGGERED';
+          const isCritical =
+            step.systemState === 'BOTTLENECK_PREDICTED' ||
+            step.systemState === 'PROPAGATION_FORECAST' ||
+            step.systemState === 'ROOT_CAUSE_ANALYSIS' ||
+            step.systemState === 'PREDICTIVE_WARNING';
+          const status = isCritical ? 'critical' : isWarning ? 'warning' : 'optimal';
+
+          return {
+            ...st,
+            status,
+            cycleTime: step.metrics.cycleTime,
+            drift: Number((step.metrics.cycleTime - st.targetCycleTime).toFixed(1)),
+            vibrationMmS: step.metrics.vibrationMmS,
+            wipBuffer: step.metrics.wipBuffer,
+            bottleneckProbability: step.metrics.bottleneckProb,
+            defectProbability: step.metrics.defectProb
+          };
+        }
+        return st;
+      })
+    );
+
+    setLiveThroughput(step.metrics.throughputUph);
+  }, [heroStepIndex]);
+
   // Comprehensive real-time digital twin live streaming engine
   useEffect(() => {
-    if (!isLiveStreaming) return;
+    if (!isLiveStreaming || isHeroPlaying) return;
 
     const intervalTime = liveStreamSpeed === 2 ? 1000 : 2000;
     const interval = setInterval(() => {
@@ -92,6 +141,11 @@ export default function App() {
       // Update station telemetry dynamically
       setStations((prevStations) =>
         prevStations.map((station) => {
+          // Keep Station 18 synced to hero demo if active
+          if (station.id === 'ST18' && isHeroDemoActive) {
+            return station;
+          }
+
           // Dynamic sparks
           const updatedSparks = station.sparkHeights.map((val) => {
             const delta = (Math.random() - 0.5) * 8;
@@ -99,7 +153,7 @@ export default function App() {
           });
 
           // Generate next historical cycle time sample (sliding 8-point window)
-          const baseNominal = 56.0;
+          const baseNominal = station.targetCycleTime || 56.0;
           const driftOffset = station.drift || 0;
           const noise = (Math.random() - 0.48) * 1.6;
           const newCycle = Number((baseNominal + driftOffset + noise).toFixed(1));
@@ -129,7 +183,7 @@ export default function App() {
     }, intervalTime);
 
     return () => clearInterval(interval);
-  }, [isLiveStreaming, liveStreamSpeed]);
+  }, [isLiveStreaming, liveStreamSpeed, isHeroPlaying, isHeroDemoActive]);
 
   // Simulate an injected anomaly burst
   const handleSimulateAnomaly = () => {
@@ -194,6 +248,24 @@ export default function App() {
       prev.map((a) => (a.id === alertId ? { ...a, status: 'executed' } : a))
     );
 
+    // If ST18, restore station 18 health
+    setStations((prev) =>
+      prev.map((st) => {
+        if (st.id === targetAlert.stationId) {
+          return {
+            ...st,
+            status: 'optimal',
+            cycleTime: st.targetCycleTime,
+            drift: 0,
+            vibrationMmS: 1.1,
+            bottleneckProbability: 8,
+            defectProbability: 5
+          };
+        }
+        return st;
+      })
+    );
+
     const newLog: SupervisorActionLog = {
       id: `log-${Date.now()}`,
       timestamp: new Date().toLocaleTimeString('en-GB'),
@@ -206,6 +278,37 @@ export default function App() {
 
     setActionLogs((prev) => [newLog, ...prev]);
     showToast(`⚡ Sequence Executed: Calibration sent to ${targetAlert.stationId} PLC`);
+  };
+
+  const handleApplyWhatIfIntervention = (stationId: string, adjustedCycleTime: number) => {
+    setStations((prev) =>
+      prev.map((st) => {
+        if (st.id === stationId) {
+          return {
+            ...st,
+            status: 'optimal',
+            cycleTime: adjustedCycleTime,
+            drift: Number((adjustedCycleTime - st.targetCycleTime).toFixed(1)),
+            vibrationMmS: 1.2,
+            bottleneckProbability: 12,
+            defectProbability: 7
+          };
+        }
+        return st;
+      })
+    );
+
+    const newLog: SupervisorActionLog = {
+      id: `log-${Date.now()}`,
+      timestamp: new Date().toLocaleTimeString('en-GB'),
+      type: 'PARAMETERS ADJUSTED',
+      title: `Applied What-If calibrated cycle time (${adjustedCycleTime}s) to ${stationId}`,
+      stationId: stationId,
+      user: 'J. Smith',
+      userId: 'ID: 492'
+    };
+    setActionLogs((prev) => [newLog, ...prev]);
+    showToast(`✓ Applied What-If parameters to ${stationId}`);
   };
 
   const handleDismissAlert = (alertId: string) => {
@@ -222,7 +325,7 @@ export default function App() {
       timestamp: new Date().toLocaleTimeString('en-GB'),
       type: 'ACKNOWLEDGED',
       title: `Delegated anomaly task to ${assignee}`,
-      stationId: selectedAlert?.stationId || 'ST32',
+      stationId: selectedAlert?.stationId || 'ST18',
       user: 'J. Smith',
       userId: 'ID: 492'
     };
@@ -286,7 +389,7 @@ export default function App() {
   };
 
   // Find active alert & selected alert
-  const activeAlert = alerts.find((a) => a.id === 'alert-st32') || alerts[0];
+  const activeAlert = alerts.find((a) => a.id === 'alert-st18') || alerts[0];
   const selectedAlert = alerts.find((a) => a.id === selectedAlertId) || activeAlert;
 
   return (
@@ -338,7 +441,45 @@ export default function App() {
           liveStreamSpeed={liveStreamSpeed}
           onChangeSpeed={setLiveStreamSpeed}
           onSimulateAnomaly={handleSimulateAnomaly}
+          onStartHeroDemo={() => setIsHeroDemoActive(true)}
+          onOpenTestRunner={() => setIsTestRunnerOpen(true)}
         />
+
+        {/* Hero Demo Time Machine Banner for Judges */}
+        {isHeroDemoActive && (
+          <HeroDemoController
+            currentStepIndex={heroStepIndex}
+            isPlaying={isHeroPlaying}
+            onSelectStep={(idx) => {
+              setHeroStepIndex(idx);
+              const rec = heroDemoSteps[idx]?.viewRecommendation;
+              if (rec) setCurrentView(rec);
+            }}
+            onTogglePlay={() => setIsHeroPlaying((prev) => !prev)}
+            onNextStep={() => {
+              setHeroStepIndex((prev) => {
+                const next = Math.min(heroDemoSteps.length - 1, prev + 1);
+                const rec = heroDemoSteps[next]?.viewRecommendation;
+                if (rec) setCurrentView(rec);
+                return next;
+              });
+            }}
+            onPrevStep={() => {
+              setHeroStepIndex((prev) => {
+                const prevStep = Math.max(0, prev - 1);
+                const rec = heroDemoSteps[prevStep]?.viewRecommendation;
+                if (rec) setCurrentView(rec);
+                return prevStep;
+              });
+            }}
+            onReset={() => {
+              setHeroStepIndex(0);
+              setCurrentView('floor');
+            }}
+            onNavigateView={(view) => setCurrentView(view)}
+            onClose={() => setIsHeroDemoActive(false)}
+          />
+        )}
 
         {/* View Switcher Screen Render */}
         <div className="flex-1 flex flex-col overflow-hidden relative">
@@ -396,10 +537,28 @@ export default function App() {
             />
           )}
 
+          {currentView === 'whatif' && (
+            <WhatIfSimulationView
+              stations={stations}
+              selectedStationId={selectedStationId}
+              onSelectStation={setSelectedStationId}
+              activeAlert={activeAlert}
+              onApplyInterventionToLiveTwin={handleApplyWhatIfIntervention}
+              onNavigateToFloor={() => setCurrentView('floor')}
+            />
+          )}
+
           {currentView === 'leadership' && (
             <LeadershipView
               onNavigateToFloor={() => setCurrentView('floor')}
               onNavigateToPlant={() => setCurrentView('plant')}
+            />
+          )}
+
+          {currentView === 'architecture' && (
+            <SystemArchitectureView
+              onOpenTestRunner={() => setIsTestRunnerOpen(true)}
+              onOpenLowCostSensorModal={() => setIsLowCostSensorModalOpen(true)}
             />
           )}
 
@@ -420,6 +579,18 @@ export default function App() {
       </div>
 
       {/* Interactive Modals and Drawers */}
+      <InAppTestRunnerModal
+        isOpen={isTestRunnerOpen}
+        onClose={() => setIsTestRunnerOpen(false)}
+        stations={stations}
+        alerts={alerts}
+      />
+
+      <LowCostSensorModal
+        isOpen={isLowCostSensorModalOpen}
+        onClose={() => setIsLowCostSensorModalOpen(false)}
+      />
+
       <SystemHealthModal
         isOpen={isHealthModalOpen}
         onClose={() => setIsHealthModalOpen(false)}
@@ -450,3 +621,4 @@ export default function App() {
     </div>
   );
 }
+
